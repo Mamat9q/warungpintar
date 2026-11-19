@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WarungPintar — Asisten AI untuk Warung &amp; UMKM</title>
+<meta name="description" content="WarungPintar: asisten AI berbahasa Indonesia untuk pemilik warung dan UMKM. Tanya harga jual, hitung margin, catat penjualan, dan pantau stok — gratis, tanpa instalasi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231b7a3d'/%3E%3Ctext x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3EWP%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo-badge" aria-hidden="true">WP</span>
+    <div>
+      <h1>WarungPintar</h1>
+      <p class="tagline">Asisten AI untuk warung &amp; UMKM Indonesia</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="btn-export" class="btn btn-ghost" type="button" title="Unduh semua data sebagai file JSON">⬇ Unduh Data</button>
+    <button id="btn-reset" class="btn btn-ghost" type="button" title="Kembalikan data contoh awal">↺ Reset Data Contoh</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Menu utama">
+  <button class="tab active" data-tab="dashboard" role="tab" type="button">📊 Dasbor</button>
+  <button class="tab" data-tab="chat" role="tab" type="button">💬 Tanya AI</button>
+  <button class="tab" data-tab="kalkulator" role="tab" type="button">🧮 Harga Jual</button>
+  <button class="tab" data-tab="penjualan" role="tab" type="button">🧾 Penjualan</button>
+  <button class="tab" data-tab="stok" role="tab" type="button">📦 Stok</button>
+</nav>
+
+<main>
+  <!-- ============ DASBOR ============ -->
+  <section id="tab-dashboard" class="panel active" aria-label="Dasbor">
+    <div class="hero">
+      <h2>Selamat datang di warung Anda, <span id="owner-name">Bu Sari</span> 👋</h2>
+      <p>WarungPintar membantu Anda menentukan harga, mencatat penjualan, dan menjaga stok — cukup tanya dalam Bahasa Indonesia.</p>
+      <p class="hero-date" id="today-label"></p>
+    </div>
+
+    <div class="cards">
+      <div class="card stat"><span class="stat-label">Omzet hari ini</span><span class="stat-value" id="stat-omzet">Rp0</span><span class="stat-sub" id="stat-omzet-sub">0 transaksi</span></div>
+      <div class="card stat"><span class="stat-label">Perkiraan laba hari ini</span><span class="stat-value" id="stat-laba">Rp0</span><span class="stat-sub" id="stat-laba-sub">margin rata-rata 0%</span></div>
+      <div class="card stat"><span class="stat-label">Produk terjual hari ini</span><span class="stat-value" id="stat-terjual">0</span><span class="stat-sub">item</span></div>
+      <div class="card stat warn"><span class="stat-label">Stok menipis</span><span class="stat-value" id="stat-stok">0</span><span class="stat-sub" id="stat-stok-sub">produk perlu kulakan</span></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Omzet 7 hari terakhir</h3>
+        <div id="chart" class="chart" aria-label="Grafik omzet 7 hari"></div>
+        <p class="muted" id="chart-note"></p>
+      </div>
+      <div class="card">
+        <h3>💡 Saran hari ini</h3>
+        <ul class="tips" id="daily-tips"></ul>
+        <button class="btn btn-primary" type="button" data-goto="chat">Tanya AI untuk saran lebih lanjut →</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Produk terlaris minggu ini</h3>
+      <table class="table" id="top-products">
+        <thead><tr><th>Produk</th><th>Terjual</th><th>Omzet</th><th>Laba</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CHAT AI ============ -->
+  <section id="tab-chat" class="panel" aria-label="Tanya AI">
+    <div class="card chat-card">
+      <div class="chat-head">
+        <h2>💬 Tanya AI</h2>
+        <span id="ai-mode-badge" class="badge badge-demo">Mode Demo — jawaban contoh</span>
+      </div>
+      <p class="muted">Tanya apa saja soal warung Anda: harga jual, stok, promo, sampai ide jualan. Jawaban dalam Bahasa Indonesia, sederhana dan langsung bisa dipakai.</p>
+
+      <details class="key-box">
+        <summary>⚙️ Pengaturan AI (kunci OpenRouter gratis — opsional)</summary>
+        <p class="muted">WarungPintar memakai model gratis OpenRouter (tanpa biaya). Tempel kunci API gratis Anda dari <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> — kunci hanya tersimpan di peramban Anda, tidak pernah dikirim ke mana pun selain OpenRouter.</p>
+        <label class="field"><span>Kunci API OpenRouter</span>
+          <input type="password" id="api-key" placeholder="sk-or-v1-..." autocomplete="off">
+        </label>
+        <label class="field"><span>Model</span>
+          <select id="model-select">
+            <option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Nemotron 3 Nano (gratis, utama)</option>
+            <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (gratis, cadangan)</option>
+            <option value="liquid/lfm-3-1.7b:free">LFM 3 1.7B (gratis, cadangan)</option>
+          </select>
+        </label>
+        <div class="row">
+          <button id="btn-save-key" class="btn btn-primary" type="button">Simpan Kunci</button>
+          <button id="btn-clear-key" class="btn btn-ghost" type="button">Hapus Kunci</button>
+          <button id="btn-test-ai" class="btn btn-ghost" type="button">Tes Koneksi AI</button>
+          <span id="key-status" class="muted"></span>
+        </div>
+        <p class="muted">Tanpa kunci, aplikasi berjalan dalam <strong>Mode Demo</strong>: jawaban diambil dari contoh yang sudah disiapkan (ditandai jelas) supaya semua fitur tetap bisa dicoba.</p>
+      </details>
+
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+
+      <div class="chips" id="quick-questions">
+        <button type="button">Berapa harga jual kopi yang pas?</button>
+        <button type="button">Stok apa yang harus saya kulak besok?</button>
+        <button type="button">Bagaimana cara menaikkan omzet warung?</button>
+        <button type="button">Ide jualan untuk akhir pekan?</button>
+      </div>
+
+      <form id="chat-form" class="chat-form">
+        <input type="text" id="chat-input" placeholder="Tulis pertanyaan Anda di sini..." autocomplete="off" maxlength="500">
+        <button class="btn btn-primary" type="submit">Kirim ➤</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ KALKULATOR ============ -->
+  <section id="tab-kalkulator" class="panel" aria-label="Kalkulator harga jual">
+    <div class="grid-2">
+      <div class="card">
+        <h2>🧮 Kalkulator Harga Jual</h2>
+        <p class="muted">Masukkan modal (HPP) per unit, lalu tentukan margin yang Anda mau. WarungPintar menghitung harga jual dan laba Anda.</p>
+        <label class="field"><span>Nama produk</span>
+          <input type="text" id="calc-nama" value="Kopi Tubruk" maxlength="60">
+        </label>
+        <label class="field"><span>Modal / HPP per unit (Rp)</span>
+          <input type="number" id="calc-hpp" min="0" step="100" value="2500">
+        </label>
+        <label class="field"><span>Biaya lain per unit — gas, plastik, dll (Rp)</span>
+          <input type="number" id="calc-biaya" min="0" step="100" value="500">
+        </label>
+        <label class="field"><span>Margin keuntungan yang diinginkan: <strong id="calc-margin-label">40%</strong></span>
+          <input type="range" id="calc-margin" min="5" max="200" step="5" value="40">
+        </label>
+        <label class="field"><span>Harga pasar di sekitar (opsional, Rp)</span>
+          <input type="number" id="calc-pasar" min="0" step="100" value="5000" placeholder="Contoh: 5000">
+        </label>
+        <div class="row">
+          <button id="btn-hitung" class="btn btn-primary" type="button">Hitung Harga Jual</button>
+          <button id="btn-pakai-harga" class="btn btn-ghost" type="button">＋ Simpan ke Stok</button>
+        </div>
+      </div>
+      <div class="card result-card">
+        <h3>Hasil perhitungan</h3>
+        <div id="calc-result" class="calc-result">
+          <p class="muted">Tekan “Hitung Harga Jual” untuk melihat hasilnya.</p>
+        </div>
+        <h3>Saran harga psikologis</h3>
+        <ul class="tips" id="calc-tips"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PENJUALAN ============ -->
+  <section id="tab-penjualan" class="panel" aria-label="Penjualan">
+    <div class="grid-2">
+      <div class="card">
+        <h2>🧾 Catat Penjualan</h2>
+        <form id="sale-form">
+          <label class="field"><span>Produk</span>
+            <select id="sale-produk"></select>
+          </label>
+          <label class="field"><span>Jumlah terjual</span>
+            <input type="number" id="sale-qty" min="1" step="1" value="1">
+          </label>
+          <label class="field"><span>Tanggal</span>
+            <input type="date" id="sale-tanggal">
+          </label>
+          <button class="btn btn-primary" type="submit">＋ Simpan Penjualan</button>
+        </form>
+        <p class="muted">Penjualan tersimpan di peramban Anda (localStorage). Tidak ada data yang dikirim ke server mana pun.</p>
+      </div>
+      <div class="card">
+        <h3>Ringkasan</h3>
+        <p>Omzet 7 hari: <strong id="sum-7d">Rp0</strong></p>
+        <p>Laba 7 hari: <strong id="sum-laba-7d">Rp0</strong></p>
+        <p>Total transaksi tercatat: <strong id="sum-count">0</strong></p>
+        <h3>Penjualan hari ini</h3>
+        <table class="table" id="sales-today">
+          <thead><tr><th>Produk</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Riwayat penjualan (30 terakhir)</h3>
+      <table class="table" id="sales-history">
+        <thead><tr><th>Tanggal</th><th>Produk</th><th>Qty</th><th>Harga</th><th>Total</th><th>Laba</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ STOK ============ -->
+  <section id="tab-stok" class="panel" aria-label="Stok">
+    <div class="grid-2">
+      <div class="card">
+        <h2>📦 Tambah / Perbarui Stok</h2>
+        <form id="stock-form">
+          <label class="field"><span>Nama produk</span>
+            <input type="text" id="stock-nama" placeholder="Contoh: Gula Pasir 1kg" maxlength="60" required>
+          </label>
+          <label class="field"><span>Harga jual per unit (Rp)</span>
+            <input type="number" id="stock-harga" min="0" step="100" required>
+          </label>
+          <label class="field"><span>Modal / HPP per unit (Rp)</span>
+            <input type="number" id="stock-hpp" min="0" step="100" required>
+          </label>
+          <label class="field"><span>Jumlah stok</span>
+            <input type="number" id="stock-qty" min="0" step="1" required>
+          </label>
+          <label class="field"><span>Batas peringatan stok menipis</span>
+            <input type="number" id="stock-min" min="0" step="1" value="5">
+          </label>
+          <button class="btn btn-primary" type="submit">＋ Simpan Produk</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Nilai persediaan</h3>
+        <p>Total nilai stok (harga jual): <strong id="stock-value">Rp0</strong></p>
+        <p>Modal tertanam di stok: <strong id="stock-cost">Rp0</strong></p>
+        <p>Produk di bawah batas aman: <strong id="stock-low-count">0</strong></p>
+        <h3>Perlu kulakan segera</h3>
+        <ul class="tips" id="stock-alerts"></ul>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Daftar stok</h3>
+      <table class="table" id="stock-table">
+        <thead><tr><th>Produk</th><th>Harga Jual</th><th>HPP</th><th>Margin</th><th>Stok</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>WarungPintar — dibuat untuk pemilik warung &amp; UMKM Indonesia. Gratis, data tersimpan di perangkat Anda sendiri. AI memakai model gratis OpenRouter; tanpa kunci API, aplikasi berjalan dalam Mode Demo yang ditandai jelas.</p>
+  <p class="muted">Versi 1.0 · SLAY HACKS 2026</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
